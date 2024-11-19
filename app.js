@@ -2,8 +2,9 @@ require('dotenv').config({ path: '../expenseapppassword/.env' }); // Load enviro
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const authRoutes = require('./routes/signroute'); // Authentication routes
-const { sequelize } = require('./util/database'); // Database connection
+const authRoutes = require('./routes/signroute');  // Import authentication routes
+const authenticate = require('./middleware/auth');  // Import authentication middleware
+const { sequelize } = require('./util/database');  // Sequelize database connection
 const path = require('path');
 
 const app = express();
@@ -15,27 +16,45 @@ app.use(bodyParser.json());  // Parse incoming JSON requests
 // Serve Static Files (for HTML forms)
 app.use(express.static(path.join(__dirname, 'views')));  // Serve HTML from views folder
 
-// Routes
-app.use('/api/auth', authRoutes);  // API routes for signup and login
+// Route for the root, redirect to signup
+app.get('/', (req, res) => {
+    res.redirect('/signup'); // Automatically redirect to /signup
+});
 
-// Serve the signup page
-const signupPath = path.join(__dirname, 'views', 'signup.html');
-console.log("Signup page path:", signupPath);  // This will log the full path to the console
-
+// Serve Sign-Up and Login HTML
 app.get('/signup', (req, res) => {
-  res.sendFile(signupPath);  // Render signup.html
+    const filePath = path.join(__dirname, 'views', 'signup.html');
+    console.log('Serving signup file from:', filePath);
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`Failed to serve signup.html: ${err}`);
+            res.status(500).send('Internal Server Error');
+        }
+    });
 });
-// Serve the login page
+
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'login.html'));  // Render login.html
+    const filePath = path.join(__dirname, 'views', 'login.html');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`Failed to serve login.html: ${err}`);
+            res.status(500).send('Internal Server Error');
+        }
+    });
 });
 
-// Serve the chat page
-app.get('/chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'chat.html'));  // Render chat.html
+// Protected route for chat
+app.get('/chat', authenticate, (req, res) => {
+    const filePath = path.join(__dirname, 'views', 'chat.html');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`Failed to serve chat.html: ${err}`);
+            res.status(500).send('Internal Server Error');
+        }
+    });
 });
 
-// Sync database
+// Sync the database with Sequelize
 sequelize.sync()
   .then(() => console.log('Database synced'))
   .catch((err) => console.error('Error syncing database:', err));
