@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+    <h2>Welcome to the Chat!</h2>
+    <p>You are now in the chat page.</p>
+    
+    <script>
+        // Check if the user is logged in by verifying the JWT token
+        if (!localStorage.getItem('token')) {
+            alert('You must be logged in to access the chat.');
+            window.location.href = '/login';  // Redirect to login if no token is found
+        }
+    </script>
+</body>
+</html>
