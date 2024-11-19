@@ -22,6 +22,9 @@ app.use('/api/auth', authRoutes);  // API routes for signup and login
 const signupPath = path.join(__dirname, 'views', 'signup.html');
 console.log("Signup page path:", signupPath);  // This will log the full path to the console
 
+app.get('/signup', (req, res) => {
+  res.sendFile(signupPath);  // Render signup.html
+});
 // Serve the login page
 app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'login.html'));  // Render login.html
