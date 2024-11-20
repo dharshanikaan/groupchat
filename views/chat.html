@@ -4,17 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
+    <style>
+        #chatWindow {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+        }
+        #messageInput {
+            width: 300px;
+        }
+        #sendMessageButton {
+            padding: 10px;
+        }
+    </style>
 </head>
 <body>
     <h2>Welcome to the Chat!</h2>
-    <p>You are now in the chat page.</p>
-    
+    <div id="chatWindow"></div>
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button id="sendMessageButton">Send</button>
+
     <script>
-        // Check if the user is logged in by verifying the JWT token
         if (!localStorage.getItem('token')) {
             alert('You must be logged in to access the chat.');
-            window.location.href = '/login';  // Redirect to login if no token is found
+            window.location.href = '/login';
         }
+
+        const token = localStorage.getItem('token');
+        const socket = io('http://localhost:3000', { query: { token } });
+
+        // Handle incoming messages
+        socket.on('chat-message', (messageData) => {
+            const chatWindow = document.getElementById('chatWindow');
+            const newMessage = document.createElement('div');
+            newMessage.textContent = `${messageData.user_name}: ${messageData.message}`;
+            chatWindow.appendChild(newMessage);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+
+        // Send message to API and socket
+        document.getElementById('sendMessageButton').addEventListener('click', async () => {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value;
+
+            if (message) {
+                // Emit to socket for real-time chat update
+                socket.emit('chat-message', { message, user_name: 'You' });
+
+                // Send message to backend
+                try {
+                    const response = await fetch('/api/chat/send', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ message })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        console.log('Message sent successfully:', result);
+                    } else {
+                        alert(result.message || 'Failed to send message');
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    alert('An error occurred while sending your message');
+                }
+
+                messageInput.value = '';
+            }
+        });
     </script>
 </body>
 </html>
+
+

@@ -1,20 +1,25 @@
-require('dotenv').config({ path: '../expenseapppassword/.env' }); // Load environment variables
+require('dotenv').config({ path: '../expenseapppassword/.env' });
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const authRoutes = require('./routes/signroute');  // Import authentication routes
-const authenticate = require('./middleware/auth');  // Import authentication middleware
-const { sequelize } = require('./util/database');  // Sequelize database connection
+const authRoutes = require('./routes/signroute');
+const chatRoutes = require('./routes/chatroute');  
+const authenticate = require('./middleware/auth');  
+const { sequelize } = require('./util/database'); 
 const path = require('path');
+const { initializeSocket } = require('./socket/chatsocket'); 
+const http = require('http');  // Import the http module
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());  // Parse incoming JSON requests
+// Create the HTTP server
+const server = http.createServer(app);  // Pass Express app to the server
 
-// Serve Static Files (for HTML forms)
-app.use(express.static(path.join(__dirname, 'views')));  // Serve HTML from views folder
+app.use(cors());
+app.use(bodyParser.json());  
+app.use('/api/users', authRoutes);
+app.use('/api/chat', chatRoutes);
+app.use(express.static(path.join(__dirname, 'views')));  
 
 // Route for the root, redirect to signup
 app.get('/', (req, res) => {
@@ -61,6 +66,9 @@ sequelize.sync()
 
 // Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {  // Start the HTTP server instead of just `app.listen()`
   console.log(`Server running on port ${PORT}`);
 });
+
+// Initialize socket.io
+initializeSocket(server);  // Pass the HTTP server to socket.io

@@ -1,6 +1,5 @@
 require('dotenv').config({ path: '../expenseapppassword/.env' });
-const { Sequelize } = require('sequelize');
-
+const { Sequelize, DataTypes } = require('sequelize');
 
 // Create a new Sequelize instance using environment variables
 const sequelize = new Sequelize(
@@ -15,8 +14,13 @@ const sequelize = new Sequelize(
   }
 );
 
+// Import models with sequelize instance and DataTypes passed to them
 const models = {
-  User: require('../models/Users')(sequelize, Sequelize.DataTypes),
+  User: require('../models/user')(sequelize, DataTypes),
+  Message: require('../models/message')(sequelize, DataTypes),
 };
+
+// Define relationships between models
+models.Message.associate(models);
 
 module.exports = { sequelize, models };
