@@ -1,6 +1,4 @@
-const { Sequelize, DataTypes } = require('sequelize'); // Ensure you're importing Sequelize and DataTypes correctly
-
-module.exports = (sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
     id: {
       type: DataTypes.INTEGER,
@@ -20,6 +18,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
+  }, {
+    // Ensure table name is 'Users' (pluralized)
+    tableName: 'Users',
+    timestamps: true, // Enable timestamps if not already enabled
   });
 
   return User;

@@ -1,6 +1,4 @@
-const { Sequelize, DataTypes } = require('sequelize');  // Import Sequelize and DataTypes
-
-module.exports = (sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   const Message = sequelize.define('Message', {
     id: {
       type: DataTypes.INTEGER,
@@ -11,7 +9,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'User',
+        model: 'Users',  // Ensure this is 'Users' (matches the actual table name)
         key: 'id',
       },
     },
@@ -21,11 +19,14 @@ module.exports = (sequelize) => {
     },
     created_at: {
       type: DataTypes.DATE,
-      defaultValue: Sequelize.NOW,  // Now, Sequelize is imported and this should work fine
+      defaultValue: sequelize.NOW,
     },
+  }, {
+    tableName: 'Messages',  // Explicitly specify 'Messages' as the table name
+    timestamps: true,
   });
 
-  // Associate Message model with User (optional if needed)
+  // Associations
   Message.associate = (models) => {
     Message.belongsTo(models.User, { foreignKey: 'user_id' });
   };

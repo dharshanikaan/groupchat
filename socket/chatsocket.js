@@ -1,10 +1,9 @@
-const socketIo = require('socket.io');
-
+const { Server } = require('socket.io');
 let io;  // Declare io object
 
 // Function to initialize socket.io
 const initializeSocket = (server) => {
-    io = socketIo(server);  // Attach socket.io to the server
+    io = new Server(server);  // Attach socket.io to the server
 
     // Handle client connection
     io.on('connection', (socket) => {
@@ -23,5 +22,4 @@ const initializeSocket = (server) => {
     });
 };
 
-// Export io instance for use in other parts of the app (like chatController.js)
 module.exports = { io, initializeSocket };

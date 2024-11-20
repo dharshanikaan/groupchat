@@ -3,84 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
-    <style>
-        #chatWindow {
-            width: 400px;
-            height: 300px;
-            border: 1px solid #ccc;
-            padding: 10px;
-            overflow-y: scroll;
-        }
-        #messageInput {
-            width: 300px;
-        }
-        #sendMessageButton {
-            padding: 10px;
-        }
-    </style>
+    <title>Group Chat</title>
+    <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script> <!-- Include Socket.io -->
+    <script>
+        // Initialize the socket connection
+        const socket = io('http://localhost:3000'); // Ensure the server URL is correct
+
+        // Update the UI with the latest messages
+        const updateMessagesUI = (messages) => {
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.innerHTML = ''; // Clear the previous messages
+
+            messages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message');
+                messageElement.textContent = `${msg.user_name}: ${msg.message}`;
+                messagesContainer.appendChild(messageElement);
+            });
+
+            // Scroll to the bottom of the messages
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        };
+
+        // Fetch messages from the backend (only new ones)
+        const fetchNewMessages = async (lastMessageId) => {
+            const response = await fetch(`/api/chat/history?lastMessageId=${lastMessageId}`);
+            const messages = await response.json();
+
+            // Store the new messages in localStorage (combine with old messages)
+            const existingMessages = JSON.parse(localStorage.getItem('messages')) || [];
+            const updatedMessages = [...existingMessages, ...messages];
+
+            // Save back to localStorage, limiting to the last 10 messages
+            if (updatedMessages.length > 10) {
+                updatedMessages.splice(0, updatedMessages.length - 10);
+            }
+            localStorage.setItem('messages', JSON.stringify(updatedMessages));
+
+            // Update the UI with the new messages
+            updateMessagesUI(updatedMessages);
+        };
+
+        // Send a message to the backend and broadcast via Socket.io
+        const sendMessage = () => {
+            const message = document.getElementById('messageInput').value;
+            if (!message.trim()) return; // Don't send empty messages
+
+            fetch('/api/chat/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`  // Assuming JWT is stored in localStorage
+                },
+                body: JSON.stringify({ message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Message sent:', data);
+
+                // Emit the message to Socket.io so others can receive it in real-time
+                socket.emit('chat-message', data.data);
+
+                // Clear input after sending
+                document.getElementById('messageInput').value = '';
+            })
+            .catch(error => console.error('Error:', error));
+        };
+
+        // Initialize chat UI on page load
+        const initChat = () => {
+            const storedMessages = JSON.parse(localStorage.getItem('messages')) || [];
+            updateMessagesUI(storedMessages);
+
+            // Get the last message's ID (from stored messages or null)
+            const lastMessageId = storedMessages.length ? storedMessages[storedMessages.length - 1].id : null;
+
+            // Fetch new messages every 1 second
+            setInterval(() => fetchNewMessages(lastMessageId), 1000);
+        };
+
+        // Listen for incoming chat messages via Socket.io
+        socket.on('chat-message', (messageData) => {
+            // When a new message is received, update the UI and store it in localStorage
+            const existingMessages = JSON.parse(localStorage.getItem('messages')) || [];
+            existingMessages.push(messageData);
+
+            // Store back the updated messages
+            if (existingMessages.length > 10) {
+                existingMessages.splice(0, existingMessages.length - 10);  // Ensure we don't store more than 10
+            }
+
+            localStorage.setItem('messages', JSON.stringify(existingMessages));
+
+            // Update the UI with the latest messages
+            updateMessagesUI(existingMessages);
+        });
+
+        // Call initChat() on page load
+        window.onload = initChat;
+    </script>
 </head>
 <body>
-    <h2>Welcome to the Chat!</h2>
-    <div id="chatWindow"></div>
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    <button id="sendMessageButton">Send</button>
-
-    <script>
-        if (!localStorage.getItem('token')) {
-            alert('You must be logged in to access the chat.');
-            window.location.href = '/login';
-        }
-
-        const token = localStorage.getItem('token');
-        const socket = io('http://localhost:3000', { query: { token } });
-
-        // Handle incoming messages
-        socket.on('chat-message', (messageData) => {
-            const chatWindow = document.getElementById('chatWindow');
-            const newMessage = document.createElement('div');
-            newMessage.textContent = `${messageData.user_name}: ${messageData.message}`;
-            chatWindow.appendChild(newMessage);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        });
-
-        // Send message to API and socket
-        document.getElementById('sendMessageButton').addEventListener('click', async () => {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value;
-
-            if (message) {
-                // Emit to socket for real-time chat update
-                socket.emit('chat-message', { message, user_name: 'You' });
-
-                // Send message to backend
-                try {
-                    const response = await fetch('/api/chat/send', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ message })
-                    });
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        console.log('Message sent successfully:', result);
-                    } else {
-                        alert(result.message || 'Failed to send message');
-                    }
-                } catch (error) {
-                    console.error('Error sending message:', error);
-                    alert('An error occurred while sending your message');
-                }
-
-                messageInput.value = '';
-            }
-        });
-    </script>
+    <div id="messages"></div>
+    <textarea id="messageInput" placeholder="Type your message..."></textarea>
+    <button onclick="sendMessage()">Send</button>
 </body>
 </html>
-
-

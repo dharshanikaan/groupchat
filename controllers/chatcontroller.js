@@ -1,8 +1,7 @@
-// controllers/chatController.js
-const { models } = require('../util/database');  // Import the models
-const { io } = require('../socket/chatsocket');  // Import Socket.io instance
+const { models } = require('../util/database');
+const { io } = require('../socket/chatsocket');  // Make sure io is properly initialized
 
-// Controller to handle sending a message
+// Send message controller
 const sendMessage = async (req, res) => {
     const { message } = req.body;
     const userId = req.user.id;  // Assuming user is authenticated and ID is available in req.user
@@ -42,17 +41,39 @@ const sendMessage = async (req, res) => {
     }
 };
 
-// Controller to fetch all messages with user details
+// Get messages (fetch new messages based on last received message)
 const getMessages = async (req, res) => {
+    const { lastMessageId } = req.query; // Get the last message ID from the query params
+    let messages = [];
+
     try {
-        const messages = await models.Message.findAll({
-            include: {
-                model: models.User,
-                as: 'user', // Alias defined in the model
-                attributes: ['id', 'name'] // Fetching only user ID and name
-            },
-            order: [['created_at', 'ASC']]  // Order messages by creation time
-        });
+        // If no lastMessageId is provided, get all messages
+        if (!lastMessageId) {
+            messages = await models.Message.findAll({
+                include: {
+                    model: models.User,
+                    as: 'user',
+                    attributes: ['id', 'name']
+                },
+                order: [['created_at', 'ASC']]
+            });
+        } else {
+            // Fetch only messages newer than the lastMessageId
+            messages = await models.Message.findAll({
+                where: {
+                    id: {
+                        [Sequelize.Op.gt]: lastMessageId  // Sequelize operator to fetch messages greater than lastMessageId
+                    }
+                },
+                include: {
+                    model: models.User,
+                    as: 'user',
+                    attributes: ['id', 'name']
+                },
+                order: [['created_at', 'ASC']]
+            });
+        }
+
         return res.status(200).json(messages);
     } catch (error) {
         console.error('Error fetching messages:', error);
@@ -60,7 +81,4 @@ const getMessages = async (req, res) => {
     }
 };
 
-module.exports = {
-    sendMessage,
-    getMessages
-};
+module.exports = { sendMessage, getMessages };

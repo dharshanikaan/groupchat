@@ -46,14 +46,14 @@
 
                 const data = await response.json();
                 const messageDiv = document.getElementById('message');
-
                 if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    messageDiv.textContent = 'Login successful! Redirecting...';
-                    setTimeout(() => window.location.href = '/chat', 2000);
-                } else {
-                    messageDiv.textContent = data.message;
-                }
+             localStorage.setItem('token', data.token);  // Store token in localStorage
+             messageDiv.textContent = 'Login successful! Redirecting...';
+             setTimeout(() => window.location.href = '/chat', 2000);  // Redirect to chat page
+           } else {
+           messageDiv.textContent = data.message;
+     }
+
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('message').textContent = 'Network error.';

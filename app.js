@@ -1,25 +1,27 @@
+// app.js
 require('dotenv').config({ path: '../expenseapppassword/.env' });
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const authRoutes = require('./routes/signroute');
-const chatRoutes = require('./routes/chatroute');  
+const authRoutes = require('./routes/signroutes');
+const chatRoutes = require('./routes/chatroutes');  
 const authenticate = require('./middleware/auth');  
 const { sequelize } = require('./util/database'); 
 const path = require('path');
 const { initializeSocket } = require('./socket/chatsocket'); 
-const http = require('http');  // Import the http module
+const http = require('http');
 
 const app = express();
 
 // Create the HTTP server
-const server = http.createServer(app);  // Pass Express app to the server
+const server = http.createServer(app);
 
+// Middleware and routes
 app.use(cors());
-app.use(bodyParser.json());  
+app.use(bodyParser.json());
 app.use('/api/users', authRoutes);
-app.use('/api/chat', chatRoutes);
-app.use(express.static(path.join(__dirname, 'views')));  
+app.use('/api/chat', chatRoutes);  // Register chatRoutes here
+app.use(express.static(path.join(__dirname, 'views')));
 
 // Route for the root, redirect to signup
 app.get('/', (req, res) => {
@@ -58,17 +60,15 @@ app.get('/chat', authenticate, (req, res) => {
         }
     });
 });
-
-// Sync the database with Sequelize
 sequelize.sync()
   .then(() => console.log('Database synced'))
   .catch((err) => console.error('Error syncing database:', err));
 
 // Start the server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {  // Start the HTTP server instead of just `app.listen()`
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
 // Initialize socket.io
-initializeSocket(server);  // Pass the HTTP server to socket.io
+initializeSocket(server);
