@@ -192,3 +192,37 @@ exports.deleteGroup = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// controllers/chatcontroller.js
+
+// Create a new chat message (assuming it's related to direct messages or something similar)
+exports.createChat = async (req, res) => {
+    const { message, userId, groupId } = req.body;  // Assuming this data comes from the request body
+    const user = req.user;  // Get the authenticated user
+  
+    try {
+      // Create the new chat in the database
+      await chat.create({ message, userId: user.id, groupId });
+  
+      res.status(201).json({ message: "Chat created successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+  
+  // Get all chats/messages (assuming this will fetch chat messages for the authenticated user)
+  exports.getChat = async (req, res) => {
+    const user = req.user;  // Get the authenticated user
+  
+    try {
+      // Fetch all messages from the database for this user
+      const messages = await chat.findAll({
+        where: { userId: user.id }, // You can modify this condition to fit your chat data model
+        include: [{ model: groupModel, attributes: ["name"] }],
+      });
+  
+      res.status(200).json({ messages });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  };
+  

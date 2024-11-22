@@ -6,6 +6,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const auth = require("./middleware/auth");
+const path = require('path'); // Ensure path is imported
 dotenv.config();
 const port = process.env.PORT || 3000;
 const { availableParallelism } = require("node:os");
@@ -13,7 +14,6 @@ const cluster = require("node:cluster");
 const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 const onlineClients = new Map();
 require("./utils/cron");
-
 
 // routes
 const userRoutes = require("./routes/signroutes");
@@ -40,6 +40,22 @@ const io = new Server(
 );
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
+
+// Serve the signup.html file
+app.get('/signup', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'signup.html'));  // Fixed path error here
+});
+
+// Serve the login.html file
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'login.html'));  // Path to the login page
+});
+
+// Serve the chat.html file after login
+app.get('/chat', (req, res) => {
+    res.sendFile(path.join(__dirname, 'views', 'chat.html'));  // Path to the chat page
+});
+
 app.use("/api", userRoutes);
 app.use("/api", loginRoutes);
 app.use("/api", chatRoutes);
@@ -68,6 +84,7 @@ if (cluster.isPrimary) {
   // set up the adapter on the primary thread
   return setupPrimary();
 }
+
 async function socketConnection() {
   io.use(auth.socketMiddleware);
   io.on("connection", (socket) => {

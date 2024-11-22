@@ -64,6 +64,9 @@
           .then((response) => {
             // If signup is successful, show success alert
             alert("Account created successfully");
+
+            // Redirect to the login page
+            window.location.href = "/public/login/login.html";  // Update the path if necessary
           })
           .catch((error) => {
             // If there's an error, check for specific error and show message
