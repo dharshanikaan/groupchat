@@ -1,56 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
-<body>
-    <h1>Sign Up</h1>
-    <form id="signup-form">
-        <label for="name">Name:</label><br>
-        <input type="text" id="name" required><br><br>
-
-        <label for="email">Email:</label><br>
-        <input type="email" id="email" required><br><br>
-
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" required minlength="8"><br><br>
-
-        <input type="submit" value="Sign Up">
-    </form>
-    <div id="message"></div>
-    <p>Already have an account? <a href="/login">Login here</a></p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Group Chat | Sign Up</title>
+    <!-- Include Axios JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome</h1>
+      <p>In order to sign up, please fill all fields below</p>
+      <form onsubmit="handlerFormSubmit(event)">
+        <div class="inputContainer">
+          <input type="text" name="name" id="name" placeholder="Name" required />
+          <input type="email" name="email" id="email" placeholder="E-mail" required />
+          <input type="tel" name="phone" id="phone" placeholder="10-digit phone" required />
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Password"
+            required
+          />
+          <button class="signUpBtn" type="submit">Get started</button>
+          <span>
+            Already have an account? 
+            <a href="/public/login/login.html">Login</a>
+          </span>
+        </div>
+      </form>
+    </div>
 
     <script>
-        document.getElementById('signup-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
+      // Form submit handler
+      function handlerFormSubmit(e) {
+        e.preventDefault();
 
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+        // Gather form data
+        const form = new FormData(e.target);
+        const signUpDetails = {
+          name: form.get("name"),
+          email: form.get("email"),
+          phone: form.get("phone"),
+          password: form.get("password"),
+        };
 
-            try {
-                const response = await fetch('/api/users/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password }),
-                });
+        // Validation for empty fields
+        if (
+          signUpDetails.name === "" ||
+          signUpDetails.email === "" ||
+          signUpDetails.phone === "" ||
+          signUpDetails.password === ""
+        ) {
+          alert("Please fill all the fields");
+          return;
+        }
 
-                const data = await response.json();
-                const messageDiv = document.getElementById('message');
-
-                if (response.ok) {
-                    messageDiv.textContent = 'Sign up successful! Redirecting to login...';
-                    setTimeout(() => window.location.href = '/login', 2000);
-                } else {
-                    messageDiv.textContent = data.message;
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('message').textContent = 'Network error.';
+        // Make POST request using Axios
+        axios
+          .post("http://localhost:3000/api/signup", signUpDetails)
+          .then((response) => {
+            // If signup is successful, show success alert
+            alert("Account created successfully");
+          })
+          .catch((error) => {
+            // If there's an error, check for specific error and show message
+            if (error.response && error.response.status === 422) {
+              alert("Email already exists");
+            } else {
+              alert("Something went wrong. Please try again.");
             }
-        });
+            console.error("Error:", error.message);
+          });
+
+        // Clear form fields after submission
+        const formElement = e.target;
+        formElement.reset();
+      }
     </script>
-</body>
+  </body>
 </html>

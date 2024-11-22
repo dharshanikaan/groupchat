@@ -1,84 +1,194 @@
-const { models } = require('../util/database');
-const { io } = require('../socket/chatsocket');  // Make sure io is properly initialized
+// controllers/chatcontroller.js
+const chat = require("../models/chat");
+const userModel = require("../models/user");
+const groupModel = require("../models/group");
+const groupMemberModel = require("../models/groupmember");
 
-// Send message controller
-const sendMessage = async (req, res) => {
-    const { message } = req.body;
-    const userId = req.user.id;  // Assuming user is authenticated and ID is available in req.user
+// Create a new group
+exports.createGroup = async (req, res) => {
+  const { name } = req.body;
+  const user = req.user; // Assuming `req.user` is set with the authenticated user's info
+  try {
+    // Create the group
+    const newGroup = await groupModel.create({ name, createdBy: user.id });
 
-    // Validate message
-    if (!message || message.trim() === '') {
-        return res.status(400).json({ message: 'Message cannot be empty' });
-    }
+    // Add the creator as the default member of the group
+    await groupMemberModel.create({ groupId: newGroup.id, userId: user.id });
 
-    try {
-        // Save the message to the database
-        const newMessage = await models.Message.create({
-            user_id: userId,
-            message: message
-        });
-
-        // Create message data to broadcast (include user info if needed)
-        const messageData = {
-            id: newMessage.id,
-            user_id: userId,
-            message: newMessage.message,
-            created_at: newMessage.created_at,
-            user_name: req.user.name  // Assuming user name is part of the user object
-        };
-
-        // Broadcast chat message to all connected clients via Socket.io
-        io.emit('chat-message', messageData);
-
-        // Send success response
-        return res.status(201).json({
-            message: 'Message sent successfully',
-            data: newMessage
-        });
-    } catch (error) {
-        console.error('Error saving message:', error);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
+    res.status(201).json({
+      message: "Group created successfully",
+      group: {
+        id: newGroup.id,
+        name: newGroup.name,
+        createdBy: user.id,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-// Get messages (fetch new messages based on last received message)
-const getMessages = async (req, res) => {
-    const { lastMessageId } = req.query; // Get the last message ID from the query params
-    let messages = [];
+// Get all groups that a user belongs to
+exports.getGroup = async (req, res) => {
+  const user = req.user; // Get the authenticated user
+  try {
+    // Find groups where the user is a member
+    const groups = await groupMemberModel.findAll({
+      where: { userId: user.id },
+      include: [{ model: groupModel, attributes: ["id", "name"] }],
+    });
 
-    try {
-        // If no lastMessageId is provided, get all messages
-        if (!lastMessageId) {
-            messages = await models.Message.findAll({
-                include: {
-                    model: models.User,
-                    as: 'user',
-                    attributes: ['id', 'name']
-                },
-                order: [['created_at', 'ASC']]
-            });
-        } else {
-            // Fetch only messages newer than the lastMessageId
-            messages = await models.Message.findAll({
-                where: {
-                    id: {
-                        [Sequelize.Op.gt]: lastMessageId  // Sequelize operator to fetch messages greater than lastMessageId
-                    }
-                },
-                include: {
-                    model: models.User,
-                    as: 'user',
-                    attributes: ['id', 'name']
-                },
-                order: [['created_at', 'ASC']]
-            });
-        }
-
-        return res.status(200).json(messages);
-    } catch (error) {
-        console.error('Error fetching messages:', error);
-        return res.status(500).json({ message: 'Failed to fetch messages' });
-    }
+    res.status(200).json({ groups });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
-module.exports = { sendMessage, getMessages };
+// Send a message to a group
+exports.sendGroupMessage = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  const { message } = req.body; // Get message from the request body
+  const user = req.user; // Get the authenticated user
+  try {
+    // Create a new message in the chat table
+    await chat.create({ message, userId: user.id, groupId });
+
+    res.status(201).json({ message: "Message sent successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get all messages from a group
+exports.getGroupMessages = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  try {
+    // Fetch all messages belonging to a specific group
+    const messages = await chat.findAll({
+      where: { groupId },
+      include: [{ model: userModel, attributes: ["name"] }],
+    });
+
+    res.status(200).json({ messages });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add a member to a group
+exports.addGroupMember = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  const { userId } = req.body; // Get user ID from request body
+  try {
+    // Add the new member to the group
+    await groupMemberModel.create({ groupId, userId });
+
+    res.status(201).json({ message: "Group member added successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get all members of a group
+exports.getGroupMembers = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  try {
+    // Find all members of the group
+    const members = await groupMemberModel.findAll({
+      where: { groupId },
+      include: [{ model: userModel, attributes: ["name"] }],
+    });
+
+    res.status(200).json({ members });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Generate an invite link for a group
+exports.generateInviteLink = async (req, res) => {
+  const { groupId } = req.body; // Get group ID from request body
+  try {
+    const group = await groupModel.findByPk(groupId); // Find the group by ID
+
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Only the group creator can generate an invite link
+    if (group.createdBy !== req.user.id) {
+      return res.status(403).json({ error: "Only the admin can create an invite link" });
+    }
+
+    const randomString = Math.random().toString(36).slice(2); // Generate a random string for the invite
+    const inviteLink = `${process.env.BASE_URL}/group-invite/${randomString}/${groupId}`;
+
+    res.json({ inviteLink });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Join a group using an invite link
+exports.joinGroup = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  try {
+    const group = await groupModel.findByPk(groupId); // Find the group by ID
+
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Add the current user to the group
+    await groupMemberModel.create({ groupId, userId: req.user.id });
+
+    res.status(200).json({ message: "Successfully joined the group" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Leave a group
+exports.leaveGroup = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  try {
+    const group = await groupModel.findByPk(groupId); // Find the group by ID
+
+    if (group.createdBy === req.user.id) {
+      return res.status(403).json({ error: "Admin cannot leave the group" });
+    }
+
+    // Remove the current user from the group
+    await groupMemberModel.destroy({ where: { groupId, userId: req.user.id } });
+
+    res.status(200).json({ message: "Successfully left the group" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete a group
+exports.deleteGroup = async (req, res) => {
+  const { groupId } = req.params; // Get group ID from params
+  try {
+    const group = await groupModel.findByPk(groupId); // Find the group by ID
+
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Only the group creator can delete the group
+    if (group.createdBy !== req.user.id) {
+      return res.status(403).json({ error: "Only the admin can delete the group" });
+    }
+
+    // Delete the group and associated data
+    await groupModel.destroy({ where: { id: groupId } });
+    await groupMemberModel.destroy({ where: { groupId } });
+    await chat.destroy({ where: { groupId } });
+
+    res.status(200).json({ message: "Group deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

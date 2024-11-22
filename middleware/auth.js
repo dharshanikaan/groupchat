@@ -1,21 +1,53 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
+const dotenv = require("dotenv");
+dotenv.config();
 
-const authenticate = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];  // Extract token from the Authorization header
-    console.log('Token received:', token);  // Log the token to check if it's passed correctly
-
+exports.authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization");
     if (!token) {
-        return res.status(403).json({ message: 'No token provided' });
+      return res.status(401).json({ error: "Authorization token is missing" });
+    }
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const userExits = await User.findByPk(payload.userId);
+
+    if (!userExits) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
-        req.user = { id: decoded.userId, name: decoded.name };
-        next();
-    });
+    req.user = {
+      id: userExits.id,
+      name: userExits.name,
+    };
+    next();
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 };
 
+exports.socketMiddleware = async (socket, next) => {
+  try {
+    const token = socket.handshake.headers.authorization; 
 
-module.exports = authenticate;
+    if (!token) {
+      return next(new Error("Authorization token is missing"));
+    }
+
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+
+    const userExists = await User.findByPk(payload.userId);
+
+    if (!userExists) {
+      return next(new Error("User not found"));
+    }
+
+    socket.user = {
+      id: userExists.id,
+      name: userExists.name
+    };
+    next(); 
+  } catch (err) {
+    next(new Error("Authentication error"));
+  }
+};

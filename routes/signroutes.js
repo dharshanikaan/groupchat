@@ -1,11 +1,8 @@
-const express = require('express');
-const { signup, login, getUserStatus } = require('../controllers/signlogincontroller');
-const authenticateToken = require('../middleware/auth');
-
+const express = require("express");
 const router = express.Router();
+const signloginController = require("../controllers/signlogincontroller");
 
-router.post('/signup', signup); // Route to sign up users
-router.post('/login', login); // Route for user login
-router.get('/status', authenticateToken, getUserStatus); // Route to check user status (protected)
+router.post("/signup", signloginController.signUp);
+router.post("/login", signloginController.login);
 
 module.exports = router;
