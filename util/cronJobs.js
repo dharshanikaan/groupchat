@@ -1,8 +1,6 @@
-//util/cron.js
 const cron = require("node-cron");
-const { Op } = require("sequelize");
-const Chat = require("../models/chat");
-const ArchivedChat = require("../models/archivedmessage");
+const Chat = require("../models/chatModel");
+const ArchivedChat = require("../models/archivedChatModel");
 
 cron.schedule("0 0 * * *", async () => {
   // Runs every night at midnight
@@ -30,12 +28,9 @@ cron.schedule("0 0 * * *", async () => {
         createdAt: chat.createdAt,
       }));
 
-      // Insert the chats into the ArchivedChat table
       await ArchivedChat.bulkCreate(archivedChats);
 
       const chatIds = chatsToArchive.map((chat) => chat.id);
-
-      // Delete the chats from the Chat table
       await Chat.destroy({
         where: {
           id: chatIds,

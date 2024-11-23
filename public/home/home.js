@@ -62,7 +62,7 @@ function displayMessage(message) {
 
 function logout() {
   localStorage.removeItem("token");
-  window.location.href = "/public/login/login.html";
+  window.location.href = "/login";
 }
 
 async function fetchGroups() {

@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../utils/db");
-const User = require("./user");
-const Group = require("./group");
+const sequelize = require("../util/db");
+const user = require("./userModel");
+const group = require("./groupModel");
 
 const ArchivedChat = sequelize.define("archivedChat", {
   id: {
@@ -16,7 +16,7 @@ const ArchivedChat = sequelize.define("archivedChat", {
   userId: {
     type: DataTypes.INTEGER,
     references: {
-      model: User,
+      model: user,
       key: "id",
     },
     allowNull: false,
@@ -24,15 +24,17 @@ const ArchivedChat = sequelize.define("archivedChat", {
   groupId: {
     type: DataTypes.INTEGER,
     references: {
-      model: Group,
+      model: group,
       key: "id",
     },
   },
+ 
 }, {
-  timestamps: true,
-});
+  timestamps: true
+}
+);
 
-ArchivedChat.belongsTo(User, { foreignKey: "userId" });
-ArchivedChat.belongsTo(Group, { foreignKey: "groupId" });
+ArchivedChat.belongsTo(user, { foreignKey: "userId" });
+ArchivedChat.belongsTo(group, { foreignKey: "groupId" });
 
 module.exports = ArchivedChat;

@@ -5,41 +5,24 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="login.css" />
-    <title>Group Chat |Login</title>
+    <title>Group Chat | Login</title>
   </head>
   <body>
     <div class="container">
       <h1>Welcome Back!</h1>
-
       <form onsubmit="handerFormSubmit(event)">
         <div class="inputContainer">
-          <input type="email" name="email" id="email" placeholder="E-mail" />
-          <input
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-          />
+          <input type="email" name="email" id="email" placeholder="E-mail" required />
+          <input type="password" name="password" id="password" placeholder="Password" required />
           <button class="loginBtn" type="submit">Login</button>
-          <span
-            >new user? <a href="/public/signUp/signUp.html">sign up</a></span
-          >
-          <span
-            >forgot password? <a href="/public/forgotPassword/forgotPass.html"
-              >forgot password</a
-            ></span
-          >
+          <span>New user? <a href="/signUp">Sign up</a></span>
+          <span>Forgot password? <a href="/public/forgotPassword/forgotPass.html">Forgot password</a></span>
         </div>
       </form>
     </div>
     <script src="login.js"></script>
-    <!-- Include SweetAlert2 CSS and JS from CDN -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Include Axios JS from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   </body>
 </html>

@@ -20,12 +20,13 @@ async function handerFormSubmit(e) {
         });
         return;
       }
-      const response = await axios.post(
-        "http://localhost:3000/api/login",
-        loginDetails
-      );
+  
+      const response = await axios.post("http://localhost:3000/api/login", loginDetails);
+      
+      // Store the JWT token in localStorage
       localStorage.setItem("token", response.data.token);
-      window.location.href = "/public/home/home.html";
+      window.location.href = "/home";  // Redirect to home page after successful login
+  
     } catch (error) {
       if (error.response && error.response.status === 401) {
         Swal.fire({
@@ -51,7 +52,8 @@ async function handerFormSubmit(e) {
       }
     }
   
-    // clear the form fields
+    // Clear form fields after submission
     document.getElementById("email").value = "";
     document.getElementById("password").value = "";
   }
+  
