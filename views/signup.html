@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="signup.css" />
     <title>Group Chat | Sign Up</title>
-    <!-- Include Axios JS from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
   </head>
   <body>
     <div class="container">
@@ -14,31 +14,25 @@
       <p>In order to sign up, please fill all fields below</p>
       <form onsubmit="handlerFormSubmit(event)">
         <div class="inputContainer">
-          <input type="text" name="name" id="name" placeholder="Name" required />
-          <input type="email" name="email" id="email" placeholder="E-mail" required />
-          <input type="tel" name="phone" id="phone" placeholder="10-digit phone" required />
-          <input
-            type="password"
-            name="password"
-            id="password"
-            placeholder="Password"
-            required
-          />
+          <input type="text" name="name" id="name" placeholder="Name" required/>
+          <input type="email" name="email" id="email" placeholder="E-mail" required/>
+          <input type="tel" name="phone" id="phone" placeholder="10-digit phone" required/>
+          <input type="password" name="password" id="password" placeholder="Password" required/>
           <button class="signUpBtn" type="submit">Get started</button>
           <span>
-            Already have an account? 
-            <a href="/public/login/login.html">Login</a>
+            already have an account?
+            <a href="/views/login.html">Login</a>
           </span>
         </div>
       </form>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-      // Form submit handler
-      function handlerFormSubmit(e) {
+      async function handlerFormSubmit(e) {
         e.preventDefault();
 
-        // Gather form data
         const form = new FormData(e.target);
         const signUpDetails = {
           name: form.get("name"),
@@ -47,40 +41,69 @@
           password: form.get("password"),
         };
 
-        // Validation for empty fields
-        if (
-          signUpDetails.name === "" ||
-          signUpDetails.email === "" ||
-          signUpDetails.phone === "" ||
-          signUpDetails.password === ""
-        ) {
-          alert("Please fill all the fields");
-          return;
-        }
+        try {
+          if (
+            signUpDetails.name == "" ||
+            signUpDetails.email == "" ||
+            signUpDetails.phone == "" ||
+            signUpDetails.password == ""
+          ) {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              text: "Please fill all the fields",
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true,
+            });
+            return;
+          }
 
-        // Make POST request using Axios
-        axios
-          .post("http://localhost:3000/api/signup", signUpDetails)
-          .then((response) => {
-            // If signup is successful, show success alert
-            alert("Account created successfully");
+          await axios.post("http://localhost:3000/api/signup", signUpDetails);
 
-            // Redirect to the login page
-            window.location.href = "/public/login/login.html";  // Update the path if necessary
-          })
-          .catch((error) => {
-            // If there's an error, check for specific error and show message
-            if (error.response && error.response.status === 422) {
-              alert("Email already exists");
-            } else {
-              alert("Something went wrong. Please try again.");
-            }
-            console.error("Error:", error.message);
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            text: "Account created successfully",
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
           });
 
-        // Clear form fields after submission
-        const formElement = e.target;
-        formElement.reset();
+          // Redirect to Login Page
+          window.location.href = "/views/login.html";
+        } catch (err) {
+          console.log("Error:", err.message);
+          if (err.response && err.response.status == 422) {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              text: "Email already exists",
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true,
+            });
+          } else {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              text: "An error occurred. Please try again later.",
+              showConfirmButton: false,
+              timer: 2000,
+              timerProgressBar: true,
+            });
+          }
+        }
+
+        // clear form fields
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("phone").value = "";
       }
     </script>
   </body>

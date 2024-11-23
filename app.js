@@ -15,19 +15,21 @@ const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
 const onlineClients = new Map();
 require("./utils/cron");
 
-// routes
+// Import Routes
 const userRoutes = require("./routes/signroutes");
 const loginRoutes = require("./routes/signroutes");
 const chatRoutes = require("./routes/chatroutes");
-const groupChatRoutes = require("./routes/chatroutes");
-// models
+const groupChatRoutes = require("./routes/groupchatroutes");
+
+// Models
 const chatModel = require("./models/chat");
 const groupMember = require("./models/groupmember");
 
+// CORS Configuration
 const corsOptions = {
   origin: ["http://localhost:3000", "http://127.0.0.1:5500"],
   credentials: true,
-  method: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
@@ -38,30 +40,33 @@ const io = new Server(
   { cors: corsOptions },
   { adapter: createAdapter() }
 );
+
 app.use(bodyParser.json());
 app.use(cors(corsOptions));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Serve the signup.html file
+app.use('/views', express.static(path.join(__dirname, 'views')));
+
+// Serve HTML Pages
 app.get('/signup', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'signup.html'));  // Fixed path error here
+  res.sendFile(path.join(__dirname, 'views', 'signup.html'));
 });
 
-// Serve the login.html file
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'login.html'));  // Path to the login page
+  res.sendFile(path.join(__dirname, 'views', 'login.html'));
 });
 
-// Serve the chat.html file after login
 app.get('/chat', (req, res) => {
-    res.sendFile(path.join(__dirname, 'views', 'chat.html'));  // Path to the chat page
+  res.sendFile(path.join(__dirname, 'views', 'chat.html'));
 });
 
+// API Routes
 app.use("/api", userRoutes);
 app.use("/api", loginRoutes);
 app.use("/api", chatRoutes);
 app.use("/api", groupChatRoutes);
 
-// test connection
+// Test Database Connection
 async function testConnection() {
   try {
     await db.authenticate();
@@ -85,12 +90,12 @@ if (cluster.isPrimary) {
   return setupPrimary();
 }
 
+// WebSocket (Socket.IO) Connection
 async function socketConnection() {
   io.use(auth.socketMiddleware);
   io.on("connection", (socket) => {
     onlineClients.set(socket.id, { name: socket.user.name });
 
-    // Notify all clients about updated online users
     io.emit("onlineClients", Array.from(onlineClients.values()));
 
     console.log(`User connected: ${socket.user.name}, socket ID: ${socket.id}`);
@@ -128,5 +133,5 @@ async function socketConnection() {
 server.listen(port, () => {
   testConnection();
   socketConnection();
-  console.log("Server started on port 3000");
+  console.log(`Server started on port ${port}`);
 });

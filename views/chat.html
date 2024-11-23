@@ -1,307 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Group Chat App | Home</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .navbar {
-            background-color: #333;
-            color: white;
-            padding: 1em;
-        }
-        .navbar ul {
-            display: flex;
-            list-style-type: none;
-        }
-        .navbar ul li {
-            margin: 0 1em;
-        }
-        .chat-app {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        .chat-area {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .input-area {
-            display: flex;
-            align-items: center;
-        }
-        .input-area input {
-            width: 100%;
-            padding: 10px;
-        }
-        .input-area button {
-            margin-left: 10px;
-        }
-        .message {
-            background-color: #f1f1f1;
-            padding: 5px;
-            margin: 5px 0;
-        }
-        .hidden {
-            display: none;
-        }
-        .dropdown-menu {
-            position: absolute;
-            background-color: white;
-            padding: 10px;
-            border: 1px solid #ccc;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
-</head>
-<body>
-    <!-- Navbar -->
+    <link rel="stylesheet" href="chat.css" />
+  </head>
+  <body>
+    <!-- navbar-->
     <div class="navbar">
-        <ul>
-            <li>
-                <button class="open-sidebar">☰</button>
-                <div class="group-sidebar mysidebar" style="display: none">
-                    <button class="close-sidebar">X</button>
-                    <button id="create-group-button">+ Create Group</button>
-                    <span>
-                        <h5 id="group-name">Select a Group</h5>
-                    </span>
-                    <span>
-                        <input type="text" id="group-search" placeholder="Search..." />
-                    </span>
-                    <span>
-                        <ul id="group-list"></ul>
-                    </span>
-                </div>
-            </li>
-            <li>
-                <input type="search" placeholder="Invite Link" id="inviteLink" />
-                <button id="invite-button">Enter</button>
-            </li>
-            <li class="user-info">
-                <span id="user-name"></span>
-                <button id="logout-button">Logout</button>
-            </li>
-            <li>
-                <h5>Online Users</h5>
-                <ul id="online-list"></ul>
-            </li>
-        </ul>
+      <ul>
+        <li>
+          <div>
+            <button class="open-sidebar">☰</button>
+          </div>
+          <div class="group-sidebar mysidebar" style="display: none">
+            <button class="close-sidebar">X</button>
+            <button id="create-group-button">+ Create Group</button>
+            <span>
+              <h5 id="group-name">Select a Group</h5>
+            </span>
+            <span>
+              <input type="text" id="group-search" placeholder="Search..." />
+            </span>
+            <span>
+              <ul id="group-list"></ul>
+            </span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <input
+              type="search"
+              placeholder="Invite Link"
+              aria-label="Search"
+              id="inviteLink"
+            />
+            <button type="button" id="invite-button">Enter</button>
+          </div>
+        </li>
+        <li class="user-info">
+          <div>
+            <span id="user-name"></span>
+            <button id="logout-button">Logout</button>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h5 style="color: black">Online Users</h5>
+            <ul id="online-list"></ul>
+          </div>
+        </li>
+      </ul>
     </div>
-
     <div class="chat-app">
-        <div class="header-container">
-            <button id="menu-button">☰</button>
-            <div id="dropdown-menu" class="dropdown-menu hidden">
-                <button id="generate-link">Generate Invite Link</button>
-                <button id="view-members">View Members</button>
-                <button id="delete-group">Delete Group</button>
-                <button id="leave-group">Leave Group</button>
-            </div>
-            <div>
-                <p class="welcome-message">ChatGram</p>
-            </div>
+      <div class="header-container">
+        <button id="menu-button">☰</button>
+        <div id="dropdown-menu" class="dropdown-menu hidden">
+          <button id="generate-link">Generate Invite Link</button>
+          <button id="view-members">View Members</button>
+          <button id="delete-group">Delete Group</button>
+          <button id="leave-group">Leave Group</button>
         </div>
-
-        <div id="chat-area" class="chat-area"></div>
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." />
-            <button id="send-button">Send</button>
+        <div>
+          <p class="welcome-message">ChatGram</p>
         </div>
+      </div>
+      <div id="chat-area" class="chat-area"></div>
+      <div class="input-area">
+        <input type="text" id="message-input" placeholder="Type a message..." />
+        <button id="send-button" type="submit">Send</button>
+      </div>
     </div>
 
     <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        const creteGroupButton = document.getElementById("create-group-button");
-        const input = document.getElementById("message-input");
-        const sendButton = document.getElementById("send-button");
-        const logoutButton = document.getElementById("logout-button");
-        const generateButton = document.getElementById("generate-link");
-        const groupNameTag = document.getElementById("group-name");
-        const groupList = document.getElementById("group-list");
-        const groupInput = document.getElementById("group-search");
-        const inviteInput = document.getElementById("inviteLink");
-        const inviteButton = document.getElementById("invite-button");
-        const menuButton = document.getElementById("menu-button");
-        const dropdownMenu = document.getElementById("dropdown-menu");
-        const userName = document.getElementById("user-name");
-        const leaveGroupButton = document.getElementById("leave-group");
-        const onlineClientList = document.getElementById("online-list");
+      // Elements
+      const createGroupButton = document.getElementById("create-group-button");
+      const input = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+      const logoutButton = document.getElementById("logout-button");
+      const generateButton = document.getElementById("generate-link");
+      const groupNameTag = document.getElementById("group-name");
+      const groupList = document.getElementById("group-list");
+      const groupInput = document.getElementById("group-search");
+      const inviteInput = document.getElementById("inviteLink");
+      const inviteButton = document.getElementById("invite-button");
+      const menuButton = document.getElementById("menu-button");
+      const dropdownMenu = document.getElementById("dropdown-menu");
+      const userName = document.getElementById("user-name");
+      const leaveGroupButton = document.getElementById("leave-group");
+      const onlineClientList = document.getElementById("online-list");
 
-        // important variables
-        let currentGroupId = null;
-        const token = localStorage.getItem("token");
-        const socket = io("http://localhost:3000", {
-            extraHeaders: {
-                Authorization: `${token}`,
-            },
+      let currentGroupId = null;
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        window.location.href = "/views/login.html";
+      }
+
+      const socket = io("http://localhost:3000", {
+        extraHeaders: { Authorization: `${token}` },
+      });
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        sendButton.addEventListener("click", sendMessage);
+        logoutButton.addEventListener("click", logout);
+        leaveGroupButton.addEventListener("click", leaveGroup);
+        input.addEventListener("keypress", handleEnterPress);
+        await fetchGroups();
+      });
+
+      socket.on("messageReceived", (data) => {
+        if (data.groupId === currentGroupId) {
+          displayLiveMessages(data);
+        }
+      });
+
+      socket.on("onlineClients", (clients) => {
+        const onlineList = document.getElementById("online-list");
+        onlineList.innerHTML = "";
+        clients.forEach((client) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `${client.name}`;
+          onlineList.appendChild(listItem);
         });
+      });
 
-        // Initialize the chat app
-        window.addEventListener("DOMContentLoaded", async () => {
-            sendButton.addEventListener("click", sendMessage);
-            logoutButton.addEventListener("click", logout);
-            leaveGroupButton.addEventListener("click", leaveGroup);
-            await fetchGroups();
+      function logout() {
+        localStorage.removeItem("token");
+        window.location.href = "/views/login.html";
+      }
+
+      async function fetchGroups() {
+        try {
+          const response = await axios.get("http://localhost:3000/api/groups", {
+            headers: { Authorization: `${token}` },
+          });
+          userName.innerText = response.data.userName;
+          displayGroups(response.data.groups);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      function displayGroups(groups) {
+        groupList.innerHTML = "";
+        groups.forEach((group) => {
+          const li = document.createElement("li");
+          li.textContent = group.chatGroup.name;
+          li.addEventListener("click", () => loadGroupChat(group.groupId, group.chatGroup.name));
+          groupList.appendChild(li);
         });
+      }
 
-        socket.on("messageReceived", (data) => {
-            if (data.groupId === currentGroupId) {
-                displayLiveMessages(data);
-            }
-        });
+      async function loadGroupChat(groupId, groupName) {
+        currentGroupId = groupId;
+        socket.emit("joinGroup", currentGroupId);
+        groupNameTag.textContent = groupName;
+        await fetchGroupMessages(groupId);
+      }
 
-        function displayLiveMessages(message) {
-            const chatArea = document.getElementById("chat-area");
-            const messageElement = document.createElement("li");
-            messageElement.classList.add("message");
-            messageElement.textContent = `${message.user}: ${message.message}`;
-            chatArea.appendChild(messageElement);
+      async function fetchGroupMessages(groupId) {
+        try {
+          const response = await axios.get(`http://localhost:3000/api/group/messages/${groupId}`, {
+            headers: { Authorization: `${token}` },
+          });
+          displayMessages(response.data.messages);
+        } catch (error) {
+          console.error(error);
         }
+      }
 
-        function displayMessages(messages) {
-            const chatArea = document.getElementById("chat-area");
-            chatArea.innerHTML = "";
-            messages.forEach(displayMessage);
+      async function sendMessage() {
+        const message = input.value.trim();
+        if (message && currentGroupId) {
+          try {
+            socket.emit("messageSent", { groupId: currentGroupId, message });
+            input.value = "";
+          } catch (error) {
+            console.error(error);
+          }
         }
+      }
 
-        // Display a single message in the chat area
-        function displayMessage(message) {
-            const chatArea = document.getElementById("chat-area");
-            const messageElement = document.createElement("li");
-            messageElement.classList.add("message");
-            messageElement.textContent = `${message.User.name}: ${message.message}`;
-            chatArea.appendChild(messageElement);
+      function handleEnterPress(event) {
+        if (event.key === "Enter") {
+          sendMessage();
         }
+      }
 
-        function logout() {
-            localStorage.removeItem("token");
-            window.location.href = "/public/login/login.html";
+      menuButton.addEventListener("click", () => {
+        dropdownMenu.classList.toggle("hidden");
+      });
+
+      generateButton.addEventListener("click", async () => {
+        try {
+          const groupId = currentGroupId;
+          const response = await axios.post("http://localhost:3000/api/group/invite", { groupId }, {
+            headers: { Authorization: `${token}` },
+          });
+          dropdownMenu.classList.add("hidden");
+          Swal.fire({
+            toast: true,
+            icon: "success",
+            text: response.data.inviteLink,
+            showConfirmButton: true,
+          });
+        } catch (error) {
+          handleError(error);
         }
+      });
 
-        async function fetchGroups() {
-            try {
-                const response = await axios.get("http://localhost:3000/api/groups", {
-                    headers: { Authorization: `${token}` },
-                });
-                userName.innerText = response.data.userName;
-                displayGroups(response.data.groups);
-            } catch (error) {
-                console.error(error);
-            }
+      async function leaveGroup() {
+        try {
+          await axios.delete(`http://localhost:3000/api/groups/leave/${currentGroupId}`, {
+            headers: { Authorization: `${token}` },
+          });
+          Swal.fire({
+            toast: true,
+            position: "top-end",
+            icon: "success",
+            text: "You have left the group!",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+          });
+          fetchGroups();
+        } catch (error) {
+          console.error(error);
         }
+      }
 
-        function displayGroups(groups) {
-            groupList.innerHTML = "";
-            groups.forEach((group) => {
-                const li = document.createElement("li");
-                li.textContent = group.chatGroup.name;
-                li.addEventListener("click", () => loadGroupChat(group.groupId, group.chatGroup.name));
-                groupList.appendChild(li);
+      function handleError(error) {
+        if (error.response) {
+          if (error.response.status === 404) {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              text: "Select the group first",
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
             });
+          }
+          if (error.response.status === 403) {
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "error",
+              text: "Admin can only generate invite link",
+              showConfirmButton: false,
+              timer: 3000,
+              timerProgressBar: true,
+            });
+          }
         }
-
-        creteGroupButton.addEventListener("click", async () => {
-            const groupName = prompt("Enter group name");
-            if (groupName) {
-                try {
-                    await axios.post(
-                        "http://localhost:3000/api/groups",
-                        { name: groupName },
-                        { headers: { Authorization: `${token}` } }
-                    );
-                    fetchGroups();
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-        });
-
-        async function loadGroupChat(groupId, groupName) {
-            currentGroupId = groupId;
-            // Join the current group
-            socket.emit("joinGroup", currentGroupId);
-            groupNameTag.textContent = groupName;
-            await fetchGroupMessages(groupId);
-        }
-
-        async function fetchGroupMessages(groupId) {
-            try {
-                const response = await axios.get(
-                    `http://localhost:3000/api/group/messages/${groupId}`,
-                    { headers: { Authorization: `${token}` } }
-                );
-                displayMessages(response.data.messages);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        async function sendMessage() {
-            const message = input.value.trim();
-
-            if (message && currentGroupId) {
-                try {
-                    socket.emit("messageSent", { groupId: currentGroupId, message });
-                    input.value = "";
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-        }
-
-        // Dropdown menu functionality
-        menuButton.addEventListener("click", () => {
-            dropdownMenu.classList.toggle("hidden");
-        });
-
-        // Generate Invite Link
-        generateButton.addEventListener("click", async () => {
-            try {
-                const groupId = currentGroupId;
-                const response = await axios.post(
-                    "http://localhost:3000/api/group/invite",
-                    { groupId },
-                    { headers: { Authorization: `${token}` } }
-                );
-                dropdownMenu.classList.add("hidden");
-                inviteInput.value = response.data.inviteLink;
-            } catch (error) {
-                console.error(error);
-            }
-        });
-
-        async function leaveGroup() {
-            try {
-                await axios.post(
-                    `http://localhost:3000/api/group/leave/${currentGroupId}`,
-                    {},
-                    { headers: { Authorization: `${token}` } }
-                );
-                groupNameTag.textContent = "Select a Group";
-                currentGroupId = null;
-                fetchGroups();
-            } catch (error) {
-                console.error(error);
-            }
-        }
+      }
     </script>
-</body>
+  </body>
 </html>
