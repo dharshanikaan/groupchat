@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Group Chat App | Home</title>
+    <link rel="stylesheet" href="home.css" />
+  </head>
+  <body>
+    <!-- navbar-->
+    <div class="navbar">
+      <ul>
+        <li>
+          <div>
+            <button class="open-sidebar">☰</button>
+          </div>
+          <div class="group-sidebar mysidebar" style="display: none">
+            <button class="close-sidebar">X</button>
+            <button id="create-group-button">+ Create Group</button>
+            <span>
+              <h5 id="group-name">Select a Group</h5>
+            </span>
+            <span>
+              <input type="text" id="group-search" placeholder="Search..." />
+            </span>
+            <span>
+              <ul id="group-list"></ul>
+            </span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <input
+              type="search"
+              placeholder="Invite Link"
+              aria-label="Search"
+              id="inviteLink"
+            />
+            <button type="button" id="invite-button">Enter</button>
+          </div>
+        </li>
+        <li class="user-info">
+          <div>
+            <span id="user-name"></span>
+            <button id="logout-button">Logout</button>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h5 style="color: black">Online Users</h5>
+            <ul id="online-list"></ul>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="chat-app">
+      <!-- Dropdown Button -->
+      <div class="header-container">
+        <button id="menu-button">☰</button>
+        <div id="dropdown-menu" class="dropdown-menu hidden">
+          <button id="generate-link">Generate Invite Link</button>
+          <button id="view-members">View Members</button>
+          <button id="delete-group">Delete Group</button>
+          <button id="leave-group">Leave Group</button>
+        </div>
+        <div>
+          <p class="welcome-message">ChatGram</p>
+        </div>
+      </div>
+      <div id="chat-area" class="chat-area"></div>
+      <div class="input-area">
+        <input type="text" id="message-input" placeholder="Type a message..." />
+        <button id="send-button" type="submit">Send</button>
+      </div>
+    </div>
+    <script>
+      // Add event listener to the close button & open button
+      document.querySelector(".close-sidebar").addEventListener("click", () => {
+        document.querySelector(".group-sidebar").style.display = "none";
+      });
+      document.querySelector(".open-sidebar").addEventListener("click", () => {
+        document.querySelector(".group-sidebar").style.display = "block";
+      });
+    </script>
+    <script src="https://cdn.socket.io/4.8.0/socket.io.min.js"></script>
+    <script src="home.js"></script>
+    <!-- Include SweetAlert2 CSS and JS from CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Include Axios JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </body>
+</html>

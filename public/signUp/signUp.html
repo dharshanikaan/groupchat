@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="signUp.css" />
+    <title>Group Chat |Sign Up</title>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome</h1>
+      <p>In order to sign up, please fill all fields below</p>
+      <form onsubmit="handerFormSubmit(event)">
+        <div class="inputContainer">
+          <input type="text" name="name" id="name" placeholder="Name" required/>
+          <input type="email" name="email" id="email" placeholder="E-mail" required/>
+          <input type="tel" name="phone" id="phone" placeholder="10-digit phone" required/>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Password"
+            required
+          />
+          <button class="signUpBtn" type="submit">Get started</button>
+          <span
+            >already have an account?
+            <a href="/public/login/login.html">Login</a></span
+          >
+        </div>
+      </form>
+    </div>
+    <script src="signUp.js"></script>
+    <!-- Include SweetAlert2 CSS and JS from CDN -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Include Axios JS from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </body>
+</html>

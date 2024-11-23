@@ -1,3 +1,4 @@
+require('dotenv').config({ path: '../expenseapppassword/.env' });
 const express = require("express");
 const bodyParser = require("body-parser");
 const db = require("./utils/db");
@@ -7,7 +8,6 @@ const { Server } = require("socket.io");
 const cors = require("cors");
 const auth = require("./middleware/auth");
 const path = require('path'); // Ensure path is imported
-dotenv.config();
 const port = process.env.PORT || 3000;
 const { availableParallelism } = require("node:os");
 const cluster = require("node:cluster");
@@ -45,20 +45,21 @@ app.use(bodyParser.json());
 app.use(cors(corsOptions));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/views', express.static(path.join(__dirname, 'views')));
+
 
 // Serve HTML Pages
 app.get('/signup', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'signup.html'));
+  res.sendFile(path.join(__dirname, 'public','signUp' ,'signUp.html'));
 });
 
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'login.html'));
+  res.sendFile(path.join(__dirname, 'public','login', 'login.html'));
 });
 
 app.get('/chat', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'chat.html'));
+  res.sendFile(path.join(__dirname, 'public', 'home','home.html'));
 });
+
 
 // API Routes
 app.use("/api", userRoutes);

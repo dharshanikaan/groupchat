@@ -40,7 +40,7 @@ exports.getGroup = async (req, res) => {
 
 exports.createGroupMember = async (req, res) => {
   const { groupId } = req.params;
-  const userId = req.body;
+  const { userId } = req.body;
   try {
     await groupMember.create({ groupId, userId });
     res.status(201).json({ message: "Group member created successfully" });
@@ -69,14 +69,14 @@ exports.sendGroupMessage = async (req, res) => {
   const { message } = req.body;
   const user = req.user;
   try {
-    await chat.create({ message, userId: user.id, groupId });
+    await chatModel.create({ message, userId: user.id, groupId });
     res.status(201).json({ message: "Message sent successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// fetch message from group
+// fetch messages from group
 exports.getGroupMessage = async (req, res) => {
   const { groupId } = req.params;
   try {
@@ -90,29 +90,35 @@ exports.getGroupMessage = async (req, res) => {
   }
 };
 
+// Generate invite link for group (Only accessible by admin)
 exports.inviteGroup = async (req, res) => {
   const { groupId } = req.body;
-  console.log("groupId", groupId);
+  console.log("Group ID:", groupId);
+  
   try {
     const group = await groupModel.findByPk(groupId);
+
+    // Check if group exists
     if (!group) {
       return res.status(404).json({ error: "Group not found" });
     }
 
-    // Only admin can generate the invite link
+    // Check if the user is an admin of the group (only admins can generate invite link)
     if (group.createdBy !== req.user.id) {
-      return res
-        .status(403)
-        .json({ error: "Only the admin can create an invite link" });
+      return res.status(403).json({ error: "Only the admin can create an invite link" });
     }
-    const randomString = Math.random().toString(36).slice(3);
-    const inviteLink = `${randomString}/${groupId}`;
-    res.json({ inviteLink });
+
+    // Generate a random string for the invite link (this could be a more complex string if necessary)
+    const randomString = Math.random().toString(36).slice(3);  // Generate a random string
+    const inviteLink = `${process.env.BASE_URL}/join/${randomString}/${groupId}`;  // Construct the invite URL
+
+    res.json({ inviteLink });  // Send the invite link back to the user
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
+// User joins the group using the invite link
 exports.joinGroup = async (req, res) => {
   const { groupId } = req.params;
   try {
@@ -121,6 +127,13 @@ exports.joinGroup = async (req, res) => {
       return res.status(404).json({ error: "Group not found" });
     }
 
+    // Check if the user is already a member of the group
+    const existingMember = await groupMember.findOne({ where: { groupId, userId: req.user.id } });
+    if (existingMember) {
+      return res.status(400).json({ error: "You are already a member of this group" });
+    }
+
+    // Add the user to the group
     await groupMember.create({ groupId, userId: req.user.id });
     res.status(200).json({ message: "Group joined successfully" });
   } catch (err) {
@@ -135,14 +148,14 @@ exports.deleteGroup = async (req, res) => {
   try {
     const chatGroup = await groupModel.findByPk(groupId);
     if (chatGroup.createdBy !== req.user.id) {
-      return res
-        .status(403)
-        .json({ error: "Only the admin can delete the group" });
+      return res.status(403).json({ error: "Only the admin can delete the group" });
     }
+
     // Delete the group and related records
     await groupModel.destroy({ where: { id: groupId } });
     await groupMember.destroy({ where: { groupId } });
     await chatModel.destroy({ where: { groupId } });
+
     res.status(200).json({ message: "Group deleted successfully" });
   } catch (err) {
     console.log(err);
@@ -155,9 +168,10 @@ exports.leaveGroup = async (req, res) => {
   const { groupId } = req.params;
   try {
     const group = await groupModel.findByPk(groupId);
-    if(group.createdBy === req.user.id){
-      return res.status(403).json({ error: "admin cannot leave the group" });
+    if (group.createdBy === req.user.id) {
+      return res.status(403).json({ error: "Admin cannot leave the group" });
     }
+
     await groupMember.destroy({ where: { groupId, userId: req.user.id } });
     res.status(200).json({ message: "Group left successfully" });
   } catch (err) {
